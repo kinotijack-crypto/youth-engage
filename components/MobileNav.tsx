@@ -1,10 +1,27 @@
+
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Menu, Home, HelpCircle, Briefcase, Users, Trophy, User, BookOpen, Sparkles } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  Menu,
+  Home,
+  HelpCircle,
+  Briefcase,
+  Users,
+  Trophy,
+  User,
+  BookOpen,
+  Sparkles,
+} from "lucide-react";
 
 const navItems = [
   { name: "Home", href: "/", icon: Home },
@@ -18,6 +35,20 @@ const navItems = [
 ];
 
 export function MobileNav() {
+  return (
+    <Suspense
+      fallback={
+        <div className="md:hidden inline-flex items-center justify-center rounded-md p-2">
+          <Menu className="h-6 w-6" />
+        </div>
+      }
+    >
+      <MobileNavContent />
+    </Suspense>
+  );
+}
+
+function MobileNavContent() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -29,16 +60,19 @@ export function MobileNav() {
       >
         <Menu className="h-6 w-6" />
       </SheetTrigger>
+
       <SheetContent side="left" className="w-[300px] sm:w-[350px] flex flex-col">
         <SheetHeader className="border-b pb-4 text-left">
           <SheetTitle className="text-xl font-bold bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent">
             YouthEngage 🚀
           </SheetTitle>
         </SheetHeader>
+
         <div className="flex flex-col gap-2 py-6 overflow-y-auto flex-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
+
             return (
               <Link
                 key={item.href}

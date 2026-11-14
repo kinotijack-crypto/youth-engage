@@ -1,12 +1,27 @@
+
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Question, Answer } from "@/types/database.types";
 
 export default function QuestionPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
+          <p className="text-gray-600">Loading question...</p>
+        </div>
+      }
+    >
+      <QuestionPageContent />
+    </Suspense>
+  );
+}
+
+function QuestionPageContent() {
   const params = useParams();
   const questionId = params.id as string;
   const supabase = createClient();
@@ -27,7 +42,6 @@ export default function QuestionPage() {
       setError("");
 
       try {
-        // 1. Fetch the question
         const { data: questionData, error: questionError } = await supabase
           .from("questions")
           .select(`
@@ -47,7 +61,6 @@ export default function QuestionPage() {
 
         setQuestion(questionData);
 
-        // 2. Fetch answers
         const { data: answersData } = await supabase
           .from("answers")
           .select(`
@@ -59,15 +72,17 @@ export default function QuestionPage() {
 
         setAnswers(answersData || []);
 
-        // 3. Increase view count (don't wait for it)
+        // Increase view count
         supabase
           .from("questions")
           .update({ views: (questionData.views || 0) + 1 })
           .eq("id", questionId)
           .then(() => {});
 
-        // 4. Get current user
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
         setUser(user);
       } catch (err) {
         console.error(err);
@@ -120,17 +135,19 @@ export default function QuestionPage() {
 
     setAnswers(answersData || []);
     setAnswer("");
-// Add 3 points for answering
-const { data: profile } = await supabase
-  .from("profiles")
-  .select("points")
-  .eq("id", user.id)
-  .single();
 
-await supabase
-  .from("profiles")
-  .update({ points: (profile?.points || 0) + 3 })
-  .eq("id", user.id);
+    // Add 3 points for answering
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("points")
+      .eq("id", user.id)
+      .single();
+
+    await supabase
+      .from("profiles")
+      .update({ points: (profile?.points || 0) + 3 })
+      .eq("id", user.id);
+
     setSubmitting(false);
   };
 
@@ -146,8 +163,13 @@ await supabase
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">{error || "Question not found."}</p>
-          <Link href="/qna" className="text-purple-600 font-medium hover:underline">
+          <p className="text-gray-600 mb-4">
+            {error || "Question not found."}
+          </p>
+          <Link
+            href="/qna"
+            className="text-purple-600 font-medium hover:underline"
+          >
             ← Back to Q&A
           </Link>
         </div>
@@ -173,6 +195,7 @@ await supabase
                 {question.category.name}
               </span>
             )}
+
             <span className="text-sm text-gray-500">
               {new Date(question.created_at).toLocaleDateString()}
             </span>
@@ -199,6 +222,7 @@ await supabase
                     "User"}
               </span>
             </span>
+
             <span>{question.views} views</span>
           </div>
         </div>
@@ -211,7 +235,9 @@ await supabase
 
           <div className="space-y-4">
             {answers.length === 0 ? (
-              <p className="text-gray-500">No answers yet. Be the first to answer!</p>
+              <p className="text-gray-500">
+                No answers yet. Be the first to answer!
+              </p>
             ) : (
               answers.map((ans) => (
                 <div
@@ -224,17 +250,21 @@ await supabase
                         ans.profiles?.full_name ||
                         "User"}
                     </span>
+
                     {ans.is_mentor_answer && (
                       <span className="text-xs font-medium bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full">
                         Mentor
                       </span>
                     )}
+
                     <span className="text-sm text-gray-500">
                       • {new Date(ans.created_at).toLocaleDateString()}
                     </span>
                   </div>
 
-                  <p className="text-gray-700 leading-relaxed">{ans.content}</p>
+                  <p className="text-gray-700 leading-relaxed">
+                    {ans.content}
+                  </p>
                 </div>
               ))
             )}
@@ -243,7 +273,9 @@ await supabase
 
         {/* Add Answer Box */}
         <div className="bg-white rounded-3xl shadow-md p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Your Answer</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">
+            Your Answer
+          </h3>
 
           {!user && (
             <div className="bg-yellow-50 text-yellow-800 p-3 rounded-xl text-sm mb-4">
