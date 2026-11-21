@@ -1,68 +1,111 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { MobileNav } from "@/components/MobileNav";
-import { NotificationBell } from "@/components/NotificationBell";
 
 export default function Navbar() {
-  const supabase = createClient();
+  const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
-    async function checkUserAdmin() {
+    const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      setUser(user);
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_admin")
-        .eq("id", user.id)
-        .single();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
 
-      if (profile?.is_admin) {
-        setIsAdmin(true);
+        if (profile?.role === "admin" || profile?.role === "moderator") {
+          setIsAdmin(true);
+        }
       }
-    }
-    checkUserAdmin();
-  }, [supabase]);
+      setLoading(false);
+    };
+
+    getUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+      if (!session?.user) setIsAdmin(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setIsAdmin(false);
+    router.push("/");
+    router.refresh();
+  };
 
   return (
-    <header className="border-b bg-white sticky top-0 z-50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        
-        {/* Left: Mobile Menu & Logo */}
-        <div className="flex items-center gap-2">
-          <MobileNav />
-          <Link href="/" className="font-bold text-xl bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent">
-            YouthEngage 🚀
-          </Link>
+    <nav className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
+      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        <Link href="/" className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          YouthEngage
+        </Link>
+
+        <div className="hidden md:flex items-center gap-7 text-sm font-medium text-gray-700">
+          <Link href="/trivia" className="hover:text-blue-600 transition">Trivia</Link>
+          <Link href="/qna" className="hover:text-purple-600 transition">Q&A</Link>
+          <Link href="/learn" className="hover:text-blue-600 transition">Learn</Link>
+          <Link href="/opportunities" className="hover:text-purple-600 transition">Opportunities</Link>
+          <Link href="/mentorship" className="hover:text-pink-600 transition">Mentorship</Link>
+
+          {isAdmin && (
+            <Link href="/leaderboard" className="hover:text-blue-600 transition">
+              Leaderboard
+            </Link>
+          )}
+
+          {isAdmin && (
+            <Link href="/admin" className="text-orange-600 font-semibold hover:text-orange-700 transition">
+              Admin
+            </Link>
+          )}
         </div>
 
-        {/* Right: Desktop Links & Notification Bell */}
-        <div className="flex items-center gap-4">
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="/learn" className="text-sm font-medium hover:text-primary transition-colors">Learn</Link>
-            <Link href="/qna" className="text-sm font-medium hover:text-primary transition-colors">Q&A</Link>
-            <Link href="/trivia" className="text-sm font-medium hover:text-primary transition-colors">Trivia</Link>
-            <Link href="/opportunities" className="text-sm font-medium hover:text-primary transition-colors">Opportunities</Link>
-            <Link href="/mentorship" className="text-sm font-medium hover:text-primary transition-colors">Mentorship</Link>
-            <Link href="/leaderboard" className="text-sm font-medium hover:text-primary transition-colors">Leaderboard</Link>
-            <Link href="/profile" className="text-sm font-medium hover:text-primary transition-colors">Profile</Link>
-            
-            {/* Show Admin link dynamically if user is admin */}
-            {isAdmin && (
-              <Link href="/admin" className="text-sm font-semibold text-purple-600 hover:text-purple-700 transition-colors">
-                Admin 🛡️
+        <div className="flex items-center gap-3">
+          {loading ? (
+            <span className="text-sm text-gray-400">...</span>
+          ) : user ? (
+            <>
+              <Link href="/profile" className="text-sm font-medium text-gray-700 hover:text-purple-600 transition">
+                Profile
               </Link>
-            )}
-          </nav>
-          
-          <NotificationBell />
+              <button
+                onClick={handleLogout}
+                className="text-sm font-medium text-gray-700 hover:text-red-600 transition"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition">
+                Login
+              </Link>
+              <Link
+                href="/register"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm px-5 py-2.5 rounded-full hover:from-blue-700 hover:to-purple-700 transition shadow-md"
+              >
+                Join Free
+              </Link>
+            </>
+          )}
         </div>
-
       </div>
-    </header>
+    </nav>
   );
 }

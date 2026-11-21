@@ -38,7 +38,7 @@ export default function ProfilePage() {
       setProfile(profileData);
 
       // Check & award any new badges
-      await checkAndAwardBadges(user.id);
+      await checkAndAwardBadges();
 
       // Fetch earned badges
       const { data: userBadgesData } = await supabase

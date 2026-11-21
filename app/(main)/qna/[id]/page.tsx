@@ -111,44 +111,43 @@ function QuestionPageContent() {
 
     setSubmitting(true);
 
-    const { error: insertError } = await supabase.from("answers").insert({
-      question_id: questionId,
-      user_id: user.id,
-      content: answer.trim(),
-    });
+       try {
+      const { error: submitError } = await supabase.rpc(
+        "submit_qna_answer",
+        {
+          p_question_id: questionId,
+          p_content: answer.trim(),
+        }
+      );
 
-    if (insertError) {
-      setError(insertError.message);
+      if (submitError) {
+        setError(submitError.message);
+        return;
+      }
+
+      // Reload answers
+      const { data: answersData, error: answersError } = await supabase
+        .from("answers")
+        .select(`
+          *,
+          profiles:profiles(username, full_name, avatar_url, role)
+        `)
+        .eq("question_id", questionId)
+        .order("created_at", { ascending: true });
+
+      if (answersError) {
+        setError("Your answer was submitted, but the answers could not be refreshed.");
+        return;
+      }
+
+      setAnswers(answersData || []);
+      setAnswer("");
+    } catch (err) {
+      console.error("Answer submission failed:", err);
+      setError("Something went wrong while submitting your answer.");
+       } finally {
       setSubmitting(false);
-      return;
     }
-
-    // Reload answers
-    const { data: answersData } = await supabase
-      .from("answers")
-      .select(`
-        *,
-        profiles:profiles(username, full_name, avatar_url, role)
-      `)
-      .eq("question_id", questionId)
-      .order("created_at", { ascending: true });
-
-    setAnswers(answersData || []);
-    setAnswer("");
-
-    // Add 3 points for answering
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("points")
-      .eq("id", user.id)
-      .single();
-
-    await supabase
-      .from("profiles")
-      .update({ points: (profile?.points || 0) + 3 })
-      .eq("id", user.id);
-
-    setSubmitting(false);
   };
 
   if (loading) {

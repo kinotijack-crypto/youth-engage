@@ -1,13 +1,24 @@
+
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { Badge } from "@/types/badges";
 
-export async function checkAndAwardBadges(userId: string): Promise<Badge[]> {
+export async function checkAndAwardBadges(): Promise<Badge[]> {
   const supabase = await createClient();
 
-  // 1. Get current profile
+  // Identify the authenticated user securely
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) return [];
+
+  const userId = user.id;
+
+  // 1. Get the authenticated user's profile
   const { data: profile } = await supabase
     .from("profiles")
     .select("points, streak")
@@ -45,8 +56,11 @@ export async function checkAndAwardBadges(userId: string): Promise<Badge[]> {
     trivia_correct: triviaCorrect || 0,
   };
 
-  // 3. Get all badges and already earned ones
-  const { data: allBadges } = await supabase.from("badges").select("*");
+  // 3. Get badges and already-earned badges
+  const { data: allBadges } = await supabase
+    .from("badges")
+    .select("*");
+
   const { data: earned } = await supabase
     .from("user_badges")
     .select("badge_id")
@@ -57,35 +71,45 @@ export async function checkAndAwardBadges(userId: string): Promise<Badge[]> {
   // 4. Find newly earned badges
   const newBadges = (allBadges || []).filter((badge) => {
     if (earnedIds.has(badge.id)) return false;
-    const currentValue = stats[badge.criteria_type as keyof typeof stats] ?? 0;
+
+    const currentValue =
+      stats[badge.criteria_type as keyof typeof stats] ?? 0;
+
     return currentValue >= badge.criteria_value;
   });
 
   if (newBadges.length === 0) return [];
 
-  // 5. Insert new badges
-  const inserts = newBadges.map((b) => ({
+  // 5. Insert newly earned badges
+  const inserts = newBadges.map((badge) => ({
     user_id: userId,
-    badge_id: b.id,
+    badge_id: badge.id,
   }));
 
-  const { error } = await supabase.from("user_badges").insert(inserts);
+  const { error } = await supabase
+    .from("user_badges")
+    .insert(inserts);
+
   if (error) {
     console.error("Error awarding badges:", error);
     return [];
   }
 
-  // 6. Award bonus points (if any)
+  // 6. Award bonus points
   const bonusPoints = newBadges.reduce(
-    (sum, b) => sum + (b.points_reward || 0),
+    (sum, badge) => sum + (badge.points_reward || 0),
     0
   );
 
   if (bonusPoints > 0) {
-    await supabase
+    const { error: pointsError } = await supabase
       .from("profiles")
       .update({ points: (profile.points || 0) + bonusPoints })
       .eq("id", userId);
+
+    if (pointsError) {
+      console.error("Error awarding badge points:", pointsError);
+    }
   }
 
   revalidatePath("/profile");

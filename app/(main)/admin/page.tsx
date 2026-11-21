@@ -43,9 +43,16 @@ interface Profile {
 interface Opportunity {
   id: string;
   title: string;
-  organization: string;
-  category: string;
-  deadline: string;
+  description: string | null;
+  type: string;
+  category: string | null;
+  location: string;
+  location_type: string | null;
+  application_link: string | null;
+  deadline: string | null;
+  status: "pending" | "approved" | "rejected";
+  is_active: boolean;
+  created_at: string;
 }
 
 interface AnalyticsEvent {
@@ -247,6 +254,37 @@ export default function AdminDashboard() {
       toast.error("Failed to delete opportunity.");
     }
   }
+async function updateOpportunityStatus(
+  id: string,
+  status: "approved" | "rejected"
+) {
+  const updates = {
+    status,
+    is_active: status === "approved",
+  };
+
+  const { error } = await supabase
+    .from("opportunities")
+    .update(updates)
+    .eq("id", id);
+
+  if (error) {
+    toast.error("Failed to update opportunity status.");
+    return;
+  }
+
+  setOpportunities((prev) =>
+    prev.map((opp) =>
+      opp.id === id ? { ...opp, ...updates } : opp
+    )
+  );
+
+  toast.success(
+    status === "approved"
+      ? "Opportunity approved and published."
+      : "Opportunity rejected."
+  );
+}
 
   if (loading) {
     return <div className="text-center py-20 text-muted-foreground">Loading Admin Control Center...</div>;
@@ -334,6 +372,17 @@ export default function AdminDashboard() {
               Mentorship <ArrowUpRight className="w-4 h-4" />
             </Button>
           </Link>
+          <Link href="/admin/trivia">
+            <Button variant="outline" className="gap-1.5">
+              <Gamepad2 className="w-4 h-4" />
+              Trivia Manager <ArrowUpRight className="w-4 h-4" />
+            </Button>
+          </Link>
+<Link href="/admin/polls">
+  <Button variant="outline" className="gap-1.5">
+    Polls & Surveys <ArrowUpRight className="w-4 h-4" />
+  </Button>
+</Link>
         </div>
       </div>
 
@@ -754,17 +803,57 @@ export default function AdminDashboard() {
                         <Badge variant="outline">{opp.category}</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {opp.organization} • Deadline: {opp.deadline || "Open"}
+                        {opp.location} • Deadline: {opp.deadline || "Open"}
                       </p>
                     </div>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteOpportunity(opp.id)}
-                      className="gap-1.5"
-                    >
-                      <Trash2 className="w-4 h-4" /> Delete
-                    </Button>
+                                        <div className="flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant={
+                          opp.status === "approved"
+                            ? "default"
+                            : opp.status === "pending"
+                            ? "secondary"
+                            : "destructive"
+                        }
+                      >
+                        {opp.status.toUpperCase()}
+                      </Badge>
+
+                      {opp.status === "pending" && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              updateOpportunityStatus(opp.id, "approved")
+                            }
+                            className="gap-1"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            Approve
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              updateOpportunityStatus(opp.id, "rejected")
+                            }
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteOpportunity(opp.id)}
+                        className="gap-1.5"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </Button>
+                                       </div>
                   </div>
                 ))}
               </div>

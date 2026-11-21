@@ -26,8 +26,9 @@ export default function PostOpportunityPage() {
     async function checkAccess() {
       const { data: { user } } = await supabase.auth.getUser();
 
-      if (!user) {
-        router.push("/login");
+           if (!user) {
+        setIsManager(false);
+        setChecking(false);
         return;
       }
 
@@ -55,6 +56,8 @@ export default function PostOpportunityPage() {
 
     const { data: { user } } = await supabase.auth.getUser();
 
+        const isAdminSubmission = isManager && Boolean(user);
+
     const { error: insertError } = await supabase.from("opportunities").insert({
       title: title.trim(),
       description: description.trim() || null,
@@ -64,7 +67,9 @@ export default function PostOpportunityPage() {
       location_type: locationType,
       application_link: applicationLink.trim() || null,
       deadline: deadline || null,
-      created_by: user?.id,
+      created_by: user?.id ?? null,
+      status: isAdminSubmission ? "approved" : "pending",
+      is_active: isAdminSubmission,
     });
 
     if (insertError) {
@@ -73,7 +78,12 @@ export default function PostOpportunityPage() {
       return;
     }
 
-    alert("Opportunity posted successfully!");
+       alert(
+      isAdminSubmission
+        ? "Opportunity posted successfully!"
+        : "Thank you! Your opportunity has been submitted for admin review."
+    );
+    setLoading(false);
     router.push("/opportunities");
   };
 
@@ -85,25 +95,7 @@ export default function PostOpportunityPage() {
     );
   }
 
-  if (!isManager) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center px-4">
-        <div className="bg-white p-8 rounded-3xl shadow-lg text-center max-w-md">
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Access Denied</h2>
-          <p className="text-gray-600 mb-6">
-            Only the management team can post opportunities.
-          </p>
-          <Link
-            href="/opportunities"
-            className="text-purple-600 font-medium hover:underline"
-          >
-            ← Back to Opportunities
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
+ 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-pink-50 py-10 px-4">
       <div className="max-w-2xl mx-auto">

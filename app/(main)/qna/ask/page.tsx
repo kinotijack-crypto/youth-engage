@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -25,9 +26,13 @@ export default function AskQuestionPage() {
       const cats = await getCategories();
       setCategories(cats);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       setUser(user);
     }
+
     init();
   }, []);
 
@@ -48,63 +53,29 @@ export default function AskQuestionPage() {
     setLoading(true);
 
     try {
-      // Check if profile exists (using maybeSingle to avoid errors)
-      const { data: existingProfile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      // Create profile only if it doesn't exist
-      if (!existingProfile) {
-        const { error: profileError } = await supabase.from("profiles").insert({
-          id: user.id,
-          full_name: user.user_metadata?.full_name || "Youth User",
-          username: user.email?.split("@")[0] || "user",
-        });
-
-        if (profileError) {
-          console.error("Profile error:", profileError);
-          setError("Could not create profile: " + profileError.message);
-          setLoading(false);
-          return;
+      const { error: submitError } = await supabase.rpc(
+        "submit_qna_question",
+        {
+          p_title: title.trim(),
+          p_description: description.trim() || null,
+          p_category_id: Number(categoryId),
+          p_is_anonymous: isAnonymous,
         }
-      }
+      );
 
-      // Insert the question
-      const { error: insertError } = await supabase.from("questions").insert({
-        user_id: user.id,
-        title: title.trim(),
-        description: description.trim() || null,
-        category_id: Number(categoryId),
-        is_anonymous: isAnonymous,
-      });
-
-      if (insertError) {
-        console.error("Insert error:", insertError);
-        setError(insertError.message);
-        setLoading(false);
+      if (submitError) {
+        console.error("Question submission error:", submitError);
+        setError(submitError.message);
         return;
       }
 
-     // Add 5 points
-const { data: profile } = await supabase
-  .from("profiles")
-  .select("points")
-  .eq("id", user.id)
-  .single();
-
-await supabase
-  .from("profiles")
-  .update({ points: (profile?.points || 0) + 5 })
-  .eq("id", user.id);
-
-alert("Question posted successfully! You earned 5 points!");
-router.push("/qna");
-router.refresh();
+      alert("Question posted successfully! You earned 5 points!");
+      router.push("/qna");
+      router.refresh();
     } catch (err: any) {
       console.error("Unexpected error:", err);
       setError(err.message || "Something went wrong");
+    } finally {
       setLoading(false);
     }
   };
@@ -113,10 +84,17 @@ router.refresh();
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-pink-50 py-10 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="mb-8">
-          <Link href="/qna" className="text-purple-600 text-sm font-medium hover:underline">
+          <Link
+            href="/qna"
+            className="text-purple-600 text-sm font-medium hover:underline"
+          >
             ← Back to Q&A
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mt-3">Ask a Question</h1>
+
+          <h1 className="text-3xl font-bold text-gray-900 mt-3">
+            Ask a Question
+          </h1>
+
           <p className="text-gray-600 mt-1">
             Get answers from the community and mentors.
           </p>
@@ -131,11 +109,15 @@ router.refresh();
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-lg p-6 md:p-8 space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-3xl shadow-lg p-6 md:p-8 space-y-6"
+        >
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Question Title <span className="text-red-500">*</span>
             </label>
+
             <input
               type="text"
               value={title}
@@ -145,20 +127,29 @@ router.refresh();
               maxLength={150}
               required
             />
-            <p className="text-xs text-gray-500 mt-1">{title.length}/150</p>
+
+            <p className="text-xs text-gray-500 mt-1">
+              {title.length}/150
+            </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Category <span className="text-red-500">*</span>
             </label>
+
             <select
               value={categoryId}
-              onChange={(e) => setCategoryId(Number(e.target.value))}
+              onChange={(e) =>
+                setCategoryId(
+                  e.target.value === "" ? "" : Number(e.target.value)
+                )
+              }
               className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
               required
             >
               <option value="">Select a category</option>
+
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}
@@ -171,6 +162,7 @@ router.refresh();
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Description (Optional)
             </label>
+
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -188,6 +180,7 @@ router.refresh();
               onChange={(e) => setIsAnonymous(e.target.checked)}
               className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
             />
+
             <label htmlFor="anonymous" className="text-sm text-gray-700">
               Post as anonymous
             </label>

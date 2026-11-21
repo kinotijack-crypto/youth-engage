@@ -49,9 +49,10 @@ export default function OpportunitiesPage() {
       }
 
       // Load opportunities
-      let query = supabase
+            let query = supabase
         .from("opportunities")
         .select("*")
+        .eq("status", "approved")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
@@ -95,15 +96,13 @@ export default function OpportunitiesPage() {
             </p>
           </div>
 
-          {/* Only show this button to Admin / Moderator */}
-          {isManager && (
-            <Link
-              href="/opportunities/post"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full font-medium hover:from-blue-700 hover:to-purple-700 transition text-center"
-            >
-              Post Opportunity
-            </Link>
-          )}
+                    {/* Everyone can submit opportunities */}
+          <Link
+            href="/opportunities/post"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full font-medium hover:from-blue-700 hover:to-purple-700 transition text-center"
+          >
+            Submit an Opportunity
+          </Link>
         </div>
 
         {/* Search Bar */}
