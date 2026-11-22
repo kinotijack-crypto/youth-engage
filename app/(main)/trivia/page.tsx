@@ -3,6 +3,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import TriviaAnnouncementBar from "@/components/layout/TriviaAnnouncementBar";
+import TriviaPromotions from "@/components/trivia/TriviaPromotions";
 
 type TriviaQuestion = {
   id: number;
@@ -185,27 +187,36 @@ setIsAuthenticated(Boolean(data.isAuthenticated));
 
   if (quizFinished) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-pink-50 py-12 px-4">
-        <div className="max-w-xl mx-auto bg-white rounded-3xl shadow-xl p-8 text-center">
-          <div className="text-6xl mb-4">🎉</div>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-amber-50 px-3 py-5">
+  <div className="mx-auto max-w-4xl rounded-3xl border border-purple-100 bg-white p-5 text-center shadow-xl sm:p-7">
+          <div className="mb-2 text-5xl">👑</div>
+<h2 className="mb-1 text-2xl font-extrabold tracking-tight text-purple-800 sm:text-3xl">
+  Congratulations!
+</h2>
+<p className="mb-3 text-sm font-medium text-gray-500">
+  You've completed the Trivia Challenge!
+</p>
 
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Quiz Completed!
-          </h2>
-
-          <p className="text-xl text-gray-600 mb-2">
-            You scored{" "}
-            <span className="font-bold text-purple-600">{score}</span>{" "}
-            out of {questions.length}
-          </p>
+          <div className="my-3">
+  <p className="text-sm font-medium uppercase tracking-wider text-gray-500">
+    Your Trivia Score
+  </p>
+  <p className="mt-1 text-4xl font-black text-purple-700">
+    {score}
+    <span className="text-xl font-semibold text-gray-400">
+      {" "}/ {questions.length}
+    </span>
+  </p>
+</div>
 
           {isAuthenticated && pointsAwarded > 0 && (
-            <p className="text-green-600 font-medium mb-6">
-              +{pointsAwarded} points added to your account!
-            </p>
+            <p className="mb-3 inline-block rounded-full bg-green-50 px-4 py-2 text-sm font-bold text-green-700">
+  🎁 +{pointsAwarded} points added to your account!
+</p>
           )}
+<TriviaPromotions />
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+         <div className="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
             <button
               onClick={() => void startQuiz()}
               className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full font-medium hover:from-blue-700 hover:to-purple-700 transition"
@@ -244,9 +255,10 @@ setIsAuthenticated(Boolean(data.isAuthenticated));
     );
   }
 
-  return (
+ return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-pink-50 py-10 px-4">
       <div className="max-w-2xl mx-auto">
+        <TriviaAnnouncementBar />
         <div className="flex justify-between items-center mb-6">
          <h1 className="text-2xl font-bold text-gray-900">
   {challenge?.title || "Weekly Trivia"}

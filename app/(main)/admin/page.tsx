@@ -23,6 +23,7 @@ import {
   Shield,
   Star,
   Activity,
+BookOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -372,7 +373,33 @@ async function updateOpportunityStatus(
               Mentorship <ArrowUpRight className="w-4 h-4" />
             </Button>
           </Link>
-          <Link href="/admin/trivia">
+<Link href="/admin/learn">
+  <Button variant="outline" className="gap-1.5">
+    <BookOpen className="w-4 h-4" />
+    Learn Manager <ArrowUpRight className="w-4 h-4" />
+  </Button>
+</Link>
+
+<Link href="/admin/announcements">
+  <Button variant="outline" className="gap-1.5">
+    Announcements Manager <ArrowUpRight className="w-4 h-4" />
+  </Button>
+</Link>
+
+<Link href="/admin/trivia-announcements">
+  <Button variant="outline" className="gap-1.5">
+    Trivia Announcements <ArrowUpRight className="w-4 h-4" />
+  </Button>
+</Link>
+
+<Link href="/admin/trivia-promotions">
+  <Button variant="outline" className="gap-1.5">
+    <Gamepad2 className="w-4 h-4" />
+    Trivia Promotions <ArrowUpRight className="w-4 h-4" />
+  </Button>
+</Link>
+
+<Link href="/admin/trivia">
             <Button variant="outline" className="gap-1.5">
               <Gamepad2 className="w-4 h-4" />
               Trivia Manager <ArrowUpRight className="w-4 h-4" />
