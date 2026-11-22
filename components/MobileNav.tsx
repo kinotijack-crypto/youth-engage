@@ -1,9 +1,10 @@
 
 "use client";
 
-import { Suspense, useState } from "react";
-import Link from "next/link";
+import { Suspense, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 import {
   Sheet,
   SheetContent,
@@ -21,6 +22,7 @@ import {
   User,
   BookOpen,
   Sparkles,
+ShieldCheck,
 } from "lucide-react";
 
 const navItems = [
@@ -32,6 +34,7 @@ const navItems = [
   { name: "Mentorship", href: "/mentorship", icon: Users },
   { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
   { name: "Profile", href: "/profile", icon: User },
+  { name: "Admin", href: "/admin", icon: ShieldCheck },
 ];
 
 export function MobileNav() {
@@ -51,6 +54,41 @@ export function MobileNav() {
 function MobileNavContent() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      setIsAdmin(
+        profile?.role === "admin" || profile?.role === "moderator"
+      );
+    };
+
+    checkAdmin();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      checkAdmin();
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -69,9 +107,16 @@ function MobileNavContent() {
         </SheetHeader>
 
         <div className="flex flex-col gap-2 py-6 overflow-y-auto flex-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
+          {navItems
+  .filter((item) => {
+  if (item.href === "/leaderboard" || item.href === "/admin") {
+    return isAdmin;
+  }
+  return true;
+})
+  .map((item) => {
+    const Icon = item.icon;
+    const isActive = pathname === item.href;
 
             return (
               <Link
