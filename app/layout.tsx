@@ -6,6 +6,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
+import AnnouncementBar from "@/components/layout/AnnouncementBar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,7 +30,9 @@ export default function RootLayout({
 
         <Navbar />
 
-        <main className="min-h-screen bg-gray-50">
+<AnnouncementBar />
+
+<main className="min-h-screen bg-gray-50">
           {children}
         </main>
 

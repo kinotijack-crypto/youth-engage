@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { MobileNav } from "@/components/MobileNav";
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
@@ -74,7 +75,7 @@ export default function Navbar() {
               Admin
             </Link>
           )}
-        </div>
+                </div>
 
         <div className="flex items-center gap-3">
           {loading ? (
@@ -104,6 +105,7 @@ export default function Navbar() {
               </Link>
             </>
           )}
+ <MobileNav />
         </div>
       </div>
     </nav>
