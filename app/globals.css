@@ -128,3 +128,21 @@
     @apply font-sans;
   }
 }
+@keyframes announcement-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-announcement-scroll {
+  display: flex;
+  width: max-content;
+  animation: announcement-scroll 25s linear infinite;
+}
+
+.animate-announcement-scroll:hover {
+  animation-play-state: paused;
+}
